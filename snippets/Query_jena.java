@@ -1,5 +1,3 @@
-package com.KRacR.s2c;
-
 import org.neo4j.driver.*;
 
 import static org.neo4j.driver.Values.parameters;
@@ -54,15 +52,16 @@ class SmallExample
     }
 }
 
-public class App 
+public class Query_jena
 {
     public static void main( String[] args )
     {
-    	SmallExample example = new SmallExample("bolt://localhost:7687", "neo4j", "neo4jnew");
-        example.addPerson("Ada");
-        example.addPerson("Alice");
-        example.addPerson("Bob");
-        example.printPeople("A");
-        example.close();
+//    	SmallExample example = new SmallExample("bolt://localhost:7687", "neo4j", "neo4jnew");
+//        example.addPerson("Ada");
+//        example.addPerson("Alice");
+//        example.addPerson("Bob");
+//        example.printPeople("A");
+//        example.close();
+    	
     }
 }
