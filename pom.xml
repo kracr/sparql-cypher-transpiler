@@ -75,6 +75,21 @@
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
           <version>2.5.2</version>
+          <executions>
+		        <execution>
+		            <phase>initialize</phase>
+		            <goals>
+		                <goal>install-file</goal>
+		            </goals>
+		            <configuration>
+		                <groupId>org.example</groupId>
+		                <artifactId>rdf4j-getting-started</artifactId>
+		                <version>0.0.1-SNAPSHOT</version>
+		                <packaging>jar</packaging>
+		                <file>${basedir}/lib/RDFtoPGConverter.jar</file>
+		            </configuration>
+		        </execution>
+		    </executions>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
