@@ -2,31 +2,24 @@ package test.java.com.KRacR.s2c;
 
 //import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.neo4j.graphdb.Label.label;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 
 import org.junit.Test;
 import org.neo4j.driver.v1.Config;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
-import org.neo4j.driver.v1.Value;
-import org.neo4j.driver.v1.Values;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Transaction;
 import org.neo4j.harness.ServerControls;
 import org.neo4j.harness.TestServerBuilders;
+
+import com.KRacR.s2c.SparqlToCypher;
 
 /**
  * Unit test for Sparql to Cypher
@@ -54,7 +47,45 @@ public class SparqlToCypherTest{
 			fail("RDFtoPGConverter interrupted for folder " + folder);
 		}
 		
-		// Create in-memory neo4j database
+		// Create in-memory neo4j database and load converted Output.json
+		try (Driver driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI(), driverConfig);
+				Session session = driver.session()) {
+			session.run(
+					"with \"file:///"
+					+ Paths.get(folder, "Output.json").toAbsolutePath().toString()
+					+ "\" as url "
+					+ "CALL apoc.load.json(url) yield value "
+					+ "unwind value.vertices as vertex "
+					+ "unwind value.edges as edge "
+					+ "merge (v {id:vertex.id, vname:vertex.vname}) on create set v=vertex "
+					+ "merge ({vname:edge.out})-[e:Edge {id:edge.id, type:edge.type}]->({vname:edge.in}) on create set e=edge"
+			);
+		}
+		
+		// Iterate over all sparql files in query
+		FileFilter sparqlFilter = new FileFilter() {
+			public boolean accept(File file) {
+				String extension = "";
+
+				int i = file.getName().lastIndexOf('.');
+				if (i > 0) {
+				    extension = file.getName().substring(i+1);
+				}
+				
+				return file.isFile() && (extension.equals("sparql"));
+			}
+		};
+
+		File[] query_files = Paths.get(folder, "queries").toFile().listFiles(sparqlFilter);
+		for (File query_file : query_files) {
+			String sparql_query = null;
+			try {
+				sparql_query = new String(Files.readAllBytes(query_file.toPath()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			String cypher_query = SparqlToCypher.convert(sparql_query);
+		}
 		
 	}
 
@@ -86,6 +117,9 @@ public class SparqlToCypherTest{
 	}
 
 	private void setupNeo4jServer() {
-		this.embeddedDatabaseServer = TestServerBuilders.newInProcessBuilder().withProcedure(apoc.load.LoadJson.class).newServer();
+		this.embeddedDatabaseServer = TestServerBuilders.newInProcessBuilder()
+				.withProcedure(apoc.load.LoadJson.class)
+				.withConfig("apoc.import.file.enabled", "true")
+				.newServer();
 	}
 }
