@@ -19,11 +19,23 @@
   </properties>
 
   <dependencies>
+  	<dependency>
+		<groupId>org.neo4j</groupId>
+		<artifactId>neo4j</artifactId>
+		<version>4.2.2</version>
+	</dependency>
+	
+	<dependency>
+        <groupId>org.neo4j.driver</groupId>
+        <artifactId>neo4j-java-driver</artifactId>
+        <version>4.2.2</version>
+    </dependency>
+	
 	<!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ast -->
 	<dependency>
 	    <groupId>org.neo4j</groupId>
 	    <artifactId>neo4j-ast</artifactId>
-	    <version>4.2.3</version>
+	    <version>4.2.2</version>
 	</dependency>
   	
     <dependency>
@@ -39,12 +51,29 @@
       <type>pom</type>
       <version>3.17.0</version>
 	</dependency>
-
-	<dependency>
-        <groupId>org.neo4j.driver</groupId>
-        <artifactId>neo4j-java-driver</artifactId>
-        <version>4.2.0</version>
-    </dependency>
+    
+    <!-- Dependencies for neo4j Test impermanent database BEGIN -->
+<!-- 	<dependency> -->
+<!-- 		<groupId>org.neo4j</groupId> -->
+<!-- 		<artifactId>neo4j-kernel</artifactId> -->
+<!-- 		<version>2.3.3</version> -->
+<!-- 		<type>test-jar</type> -->
+<!-- 		<scope>test</scope> -->
+<!-- 	</dependency> -->
+<!-- 	<dependency> -->
+<!-- 		<groupId>org.neo4j</groupId> -->
+<!-- 		<artifactId>neo4j-io</artifactId> -->
+<!-- 		<version>2.3.3</version> -->
+<!-- 		<type>test-jar</type> -->
+<!-- 		<scope>test</scope> -->
+<!-- 	</dependency> -->
+<!-- 	<dependency> -->
+<!-- 		<groupId>org.hamcrest</groupId> -->
+<!-- 		<artifactId>hamcrest-all</artifactId> -->
+<!-- 		<version>1.3</version> -->
+<!-- 		<scope>test</scope> -->
+<!-- 	</dependency> -->
+  <!-- Dependencies for neo4j Test impermanent database END -->
   </dependencies>
   
   <build>
@@ -75,21 +104,21 @@
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
           <version>2.5.2</version>
-          <executions>
-		        <execution>
-		            <phase>initialize</phase>
-		            <goals>
-		                <goal>install-file</goal>
-		            </goals>
-		            <configuration>
-		                <groupId>org.example</groupId>
-		                <artifactId>rdf4j-getting-started</artifactId>
-		                <version>0.0.1-SNAPSHOT</version>
-		                <packaging>jar</packaging>
-		                <file>${basedir}/lib/RDFtoPGConverter.jar</file>
-		            </configuration>
-		        </execution>
-		    </executions>
+<!--           <executions> -->
+<!-- 		        <execution> -->
+<!-- 		            <phase>initialize</phase> -->
+<!-- 		            <goals> -->
+<!-- 		                <goal>install-file</goal> -->
+<!-- 		            </goals> -->
+<!-- 		            <configuration> -->
+<!-- 		                <groupId>org.example</groupId> -->
+<!-- 		                <artifactId>rdf4j-getting-started</artifactId> -->
+<!-- 		                <version>0.0.1-SNAPSHOT</version> -->
+<!-- 		                <packaging>jar</packaging> -->
+<!-- 		                <file>${basedir}/lib/RDFtoPGConverter.jar</file> -->
+<!-- 		            </configuration> -->
+<!-- 		        </execution> -->
+<!-- 		    </executions> -->
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
