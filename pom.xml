@@ -16,27 +16,53 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
+    
+    <neo4j.version>3.5.23</neo4j.version>
+    <neo4j-apoc.version>3.5.0.15</neo4j-apoc.version>
+    <driver.version>1.7.5</driver.version>
   </properties>
 
   <dependencies>
   	<dependency>
 		<groupId>org.neo4j</groupId>
 		<artifactId>neo4j</artifactId>
-		<version>4.2.2</version>
+		<version>${neo4j.version}</version>
 	</dependency>
 	
 	<dependency>
-        <groupId>org.neo4j.driver</groupId>
-        <artifactId>neo4j-java-driver</artifactId>
-        <version>4.2.2</version>
+        <groupId>org.neo4j.procedure</groupId>
+        <artifactId>apoc</artifactId>
+        <version>${neo4j-apoc.version}</version>
+        <scope>test</scope>
     </dependency>
+    <dependency>
+	     <groupId>org.neo4j.driver</groupId>
+	     <artifactId>neo4j-java-driver</artifactId>
+	     <version>${driver.version}</version>
+	 </dependency>
+	<dependency>
+        <groupId>org.neo4j.test</groupId>
+        <artifactId>neo4j-harness</artifactId>
+        <version>${neo4j.version}</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.neo4j</groupId>
+        <artifactId>neo4j-kernel</artifactId>
+        <version>${neo4j.version}</version>
+    </dependency>
+<!-- 	<dependency> -->
+<!--         <groupId>org.neo4j.driver</groupId> -->
+<!--         <artifactId>neo4j-java-driver</artifactId> -->
+<!--         <version>4.2.2</version> -->
+<!--     </dependency> -->
 	
 	<!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ast -->
-	<dependency>
-	    <groupId>org.neo4j</groupId>
-	    <artifactId>neo4j-ast</artifactId>
-	    <version>4.2.2</version>
-	</dependency>
+<!-- 	<dependency> -->
+<!-- 	    <groupId>org.neo4j</groupId> -->
+<!-- 	    <artifactId>neo4j-ast</artifactId> -->
+<!-- 	    <version>4.2.2</version> -->
+<!-- 	</dependency> -->
   	
     <dependency>
       <groupId>junit</groupId>
