@@ -1,8 +1,5 @@
 package com.KRacR.s2c;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.lang.String;
 
 public class SparqlToCypher {
