@@ -10,66 +10,48 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.List;
 
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
 import org.junit.jupiter.api.Test;
-import org.neo4j.driver.v1.Config;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.harness.ServerControls;
-import org.neo4j.harness.TestServerBuilders;
-
+import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.harness.Neo4j;
+import org.neo4j.harness.Neo4jBuilders;
+import com.KRacR.s2c.RDFtoCypher;
 import com.KRacR.s2c.SparqlToCypher;
-
 
 /**
  * Unit test for Sparql to Cypher
  */
 public class SparqlToCypherTest{
-	private ServerControls embeddedDatabaseServer;
-	private static final Config driverConfig = Config.build().withoutEncryption().toConfig();
-	
+	private Neo4j embeddedDatabaseServer;
 	private void run_TTL_Automated_Test(String folder){
 		Path rdf_path = Paths.get(folder, "rdf.ttl");
 		
 		// Convert the RDF to PG, it is saved under $folder/Output.json
 		// Use PG_Bench RDF_to_PG_PG_Bench(rdf_path, folder);
 		
-		// Convert the RDF to PG, it is saved under $folder/Output.cql
-		try {
-			com.KRacR.s2c.RDFtoCypher.RDFFiletoCypherFIle(rdf_path.toAbsolutePath().toString(), Paths.get(folder, "Output.cql").toAbsolutePath().toString());
-		} catch (IOException e1) {
-			e1.printStackTrace();
-			fail("RDFFiletoCypherFile failed to convert ttl to cypher"); 
-		}
-		
 		// Create RDF model from ttl
-		Model rdf_model = RDFDataMgr.loadModel(rdf_path.toString()) ;
+		Model rdf_model = RDFDataMgr.loadModel(rdf_path.toString());
 		
-		// Create in-memory neo4j database and load converted Output.json
-		try (Driver driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI(), driverConfig);
-				Session session = driver.session()) {
-			session.run(
-					"with \"file:///"
-					+ Paths.get(folder, "Output.json").toAbsolutePath().toString()
-					+ "\" as url "
-					+ "CALL apoc.load.json(url) yield value "
-					+ "unwind value.vertices as vertex "
-					+ "unwind value.edges as edge "
-					+ "merge (v {id:vertex.id, vname:vertex.vname}) on create set v=vertex "
-					+ "merge ({vname:edge.out})-[e:Edge {id:edge.id, type:edge.type}]->({vname:edge.in}) on create set e=edge"
-			);
-		}
+		// Load the converted RDF into Neo4j
+		try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
+            for(String q: RDFtoCypher.RDFtoCypherDirect(rdf_model)) {
+            	tx.execute(q);
+            }
+            tx.commit();
+        }catch(Exception e) {
+        	e.printStackTrace();
+        	fail("Error executing RDF converted cypher queries in neo4j");
+        }
 		
 		// Iterate over all sparql files in queries folder
 		FileFilter sparqlFilter = new FileFilter() {
@@ -97,16 +79,17 @@ public class SparqlToCypherTest{
 			String cypher_query = SparqlToCypher.convert(sparql_query);
 			
 			// Execute the cypher query on the database
-			
+			Result result = null;
+			try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
+	            result = tx.execute(cypher_query);
+	        }
+			System.out.println("Cypher Columns: " + String.join(", ", result.columns()));
 			
 			// Execute the sparql query on the database
 			Query query = QueryFactory.create(sparql_query);
 			QueryExecution qe = QueryExecutionFactory.create(query, rdf_model);
 			ResultSet results = qe.execSelect();
-//			while(results.hasNext()) {
-//				//results.
-//			}
-			//ResultSetFormatter.out(System.out, results, query);
+			ResultSetFormatter.out(System.out, results, query);
 		}
 	}
 
@@ -148,16 +131,12 @@ public class SparqlToCypherTest{
     }
 
 	private void delete_all_from_neo4j() {
-		try (Driver driver = GraphDatabase.driver(embeddedDatabaseServer.boltURI(), driverConfig);
-				Session session = driver.session()) {
-			session.run("match (n) detach delete n;");
-		}
+		try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
+            tx.execute("MATCH (n) detach delete n;");
+        }
 	}
 
 	private void setupNeo4jServer() {
-		this.embeddedDatabaseServer = TestServerBuilders.newInProcessBuilder()
-				.withProcedure(apoc.load.LoadJson.class)
-				.withConfig("apoc.import.file.enabled", "true")
-				.newServer();
+		embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder().withDisabledServer().build();
 	}
 }
