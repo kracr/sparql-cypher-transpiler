@@ -10,14 +10,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
-import org.apache.jena.query.ResultSetFormatter;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
 import org.junit.jupiter.api.Test;
@@ -25,8 +27,6 @@ import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
-import com.KRacR.s2c.RDFtoCypher;
-import com.KRacR.s2c.SparqlToCypher;
 
 /**
  * Unit test for Sparql to Cypher
@@ -42,7 +42,7 @@ public class SparqlToCypherTest{
 		// Create RDF model from ttl
 		Model rdf_model = RDFDataMgr.loadModel(rdf_path.toString());
 		
-		// Load the converted RDF into Neo4j
+		// Convert the RDF model to cypher queries and load into Neo4j
 		try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
             for(String q: RDFtoCypher.RDFtoCypherDirect(rdf_model)) {
             	tx.execute(q);
@@ -79,17 +79,36 @@ public class SparqlToCypherTest{
 			String cypher_query = SparqlToCypher.convert(sparql_query);
 			
 			// Execute the cypher query on the database
-			Result result = null;
+			Set<Map<String, String>> sparql_result = new HashSet<Map<String, String>>();
+			Set<Map<String, String>> cypher_result = new HashSet<Map<String, String>>();
 			try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
-	            result = tx.execute(cypher_query);
+				Result result = tx.execute(cypher_query);
+	            while(result.hasNext()) {
+	            	Map<String, Object> row = result.next();
+	            	Map<String, String> res = new HashMap<String, String>();
+	            	for(String col: row.keySet()) {
+	            		res.put(col, row.get(col).toString());
+	            		
+	            	}
+	            	cypher_result.add(res);
+	            }
 	        }
-			System.out.println("Cypher Columns: " + String.join(", ", result.columns()));
 			
 			// Execute the sparql query on the database
 			Query query = QueryFactory.create(sparql_query);
 			QueryExecution qe = QueryExecutionFactory.create(query, rdf_model);
 			ResultSet results = qe.execSelect();
-			ResultSetFormatter.out(System.out, results, query);
+			while(results.hasNext()) {
+				QuerySolution row = results.next();
+				Map<String, String> res = new HashMap<String, String>();
+				for(String col: results.getResultVars()) {
+					res.put(col, row.get(col).toString());
+				}
+				sparql_result.add(res);
+			}
+			System.out.println(sparql_result);
+			System.out.println(cypher_result);
+			assertEquals(sparql_result, cypher_result);
 		}
 	}
 
@@ -133,6 +152,7 @@ public class SparqlToCypherTest{
 	private void delete_all_from_neo4j() {
 		try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
             tx.execute("MATCH (n) detach delete n;");
+            tx.commit();
         }
 	}
 
