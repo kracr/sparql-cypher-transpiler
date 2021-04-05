@@ -41,21 +41,16 @@ public class SparqlToCypherTest{
 	
 	private void run_TTL_Automated_Test(String folder){
 		Path rdf_path = Paths.get(folder, "rdf.ttl");
-		Path path_to_pg_bench = Paths.get("lib/RDFtoPGConverter.jar");
 		
 		// Convert the RDF to PG, it is saved under $folder/Output.json
-		ProcessBuilder pb = new ProcessBuilder("java", "-jar", path_to_pg_bench.toAbsolutePath().toString(), rdf_path.toString());
-		pb.directory(new File(folder));
+		// Use PG_Bench RDF_to_PG_PG_Bench(rdf_path, folder);
+		
+		// Convert the RDF to PG, it is saved under $folder/Output.cql
 		try {
-			Process p = pb.start();
-			int status = p.waitFor();
-			assertEquals(0, status);
-		} catch (IOException e) {
-			e.printStackTrace();
-			fail("Failed to start process RDFtoPGConverter for folder " + folder);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			fail("RDFtoPGConverter interrupted for folder " + folder);
+			com.KRacR.s2c.RDFtoCypher.RDFFiletoCypherFIle(rdf_path.toAbsolutePath().toString(), Paths.get(folder, "Output.cql").toAbsolutePath().toString());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			fail("RDFFiletoCypherFile failed to convert ttl to cypher"); 
 		}
 		
 		// Create RDF model from ttl
@@ -103,15 +98,36 @@ public class SparqlToCypherTest{
 			
 			// Execute the cypher query on the database
 			
+			
 			// Execute the sparql query on the database
 			Query query = QueryFactory.create(sparql_query);
 			QueryExecution qe = QueryExecutionFactory.create(query, rdf_model);
 			ResultSet results = qe.execSelect();
-			ResultSetFormatter.out(System.out, results, query);
+//			while(results.hasNext()) {
+//				//results.
+//			}
+			//ResultSetFormatter.out(System.out, results, query);
 		}
 	}
 
-    @Test
+    private void RDF_to_PG_PG_Bench(Path rdf_path, String folder) {
+    	Path path_to_pg_bench = Paths.get("lib/RDFtoPGConverter.jar");
+    	ProcessBuilder pb = new ProcessBuilder("java", "-jar", path_to_pg_bench.toAbsolutePath().toString(), rdf_path.toString());
+		pb.directory(new File(folder));
+		try {
+			Process p = pb.start();
+			int status = p.waitFor();
+			assertEquals(0, status);
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail("Failed to start process RDFtoPGConverter for folder " + folder);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			fail("RDFtoPGConverter interrupted for folder " + folder);
+		}
+	}
+
+	@Test
     public void All_TTL_Automated_Test() throws IOException{
     	// Code for iterating over all directories:
     	// Source: http://www.avajava.com/tutorials/lessons/how-do-i-use-a-filefilter-to-display-only-the-directories-within-a-directory.html
