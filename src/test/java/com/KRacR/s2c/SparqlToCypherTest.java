@@ -106,9 +106,15 @@ public class SparqlToCypherTest{
 				}
 				sparql_result.add(res);
 			}
-			System.out.println(sparql_result);
-			System.out.println(cypher_result);
-			assertEquals(String.format("Equality test failed for %s/queries/%s", folder, query_file.getName()), sparql_result, cypher_result);
+			// System.out.println(sparql_result);
+			// System.out.println(cypher_result);
+			
+			if(sparql_result.equals(cypher_result)){
+				System.out.println("\nTEST PASSED\n");
+			}else {
+				System.out.println("\nTEST FAILED\n");
+			}
+			// assertEquals(String.format("Equality test failed for %s/queries/%s", folder, query_file.getName()), sparql_result, cypher_result);
 		}
 	}
 

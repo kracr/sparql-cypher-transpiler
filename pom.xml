@@ -28,11 +28,20 @@
 		<version>${neo4j.version}</version>
 	</dependency>
 	
+	<!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-ast -->
+	<dependency>
+	    <groupId>org.neo4j</groupId>
+	    <artifactId>neo4j-ast</artifactId>
+	    <version>${neo4j.version}</version>
+	</dependency>
+	
+	
     <dependency>
 	     <groupId>org.neo4j.driver</groupId>
 	     <artifactId>neo4j-java-driver</artifactId>
 	     <version>${driver.version}</version>
-	 </dependency>
+	</dependency>
+	
 	<dependency>
         <groupId>org.neo4j.test</groupId>
         <artifactId>neo4j-harness</artifactId>
@@ -52,19 +61,6 @@
         <version>5.6.2</version>
         <scope>test</scope>
     </dependency>
-    <!-- <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.13</version>
-        <scope>test</scope>
-    </dependency>
-    
-    <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter-engine</artifactId>
-        <version>5.4.0</version>
-        <scope>test</scope>
-    </dependency> -->
     
 	<dependency>
       <groupId>org.apache.jena</groupId>
