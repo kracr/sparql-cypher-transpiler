@@ -5,6 +5,9 @@ import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.RDFVisitor;
 import org.apache.jena.rdf.model.Resource;
 
+// TODO: Change all "IRI" to "URI"
+// TODO: Check if there exists a unique id for every node in Neo4j
+
 class CreateCypher implements RDFVisitor {
 	String label;
 	public CreateCypher() {
@@ -14,7 +17,7 @@ class CreateCypher implements RDFVisitor {
 	@Override
 	public String visitBlank(Resource r, AnonId id) {
 		return String.format(
-				"MERGE (%s {uri:\"\", id:\"%s\"})", 
+				"MERGE (%s {uri:\"\", id:\"%s\"})",
 				this.label,
 				id.getBlankNodeId().toString()
 		);
@@ -23,7 +26,7 @@ class CreateCypher implements RDFVisitor {
 	@Override
 	public String visitURI(Resource r, String uri) {
 		return String.format(
-				"MERGE (%s {uri:\"%s\"})", 
+				"MERGE (%s {uri:\"%s\"})",
 				this.label,
 				uri
 		);

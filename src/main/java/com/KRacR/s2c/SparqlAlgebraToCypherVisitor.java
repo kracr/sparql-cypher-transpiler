@@ -37,7 +37,7 @@ import org.apache.jena.sparql.algebra.op.OpTriple;
 import org.apache.jena.sparql.algebra.op.OpUnion;
 
 public class SparqlAlgebraToCypherVisitor implements OpVisitor {
-	
+	String cypher;
 	
 	@Override
 	public void visit(OpBGP opBGP) {

@@ -79,6 +79,7 @@ public class SparqlToCypherTest{
 			String cypher_query = SparqlToCypher.convert(sparql_query);
 			
 			// Execute the cypher query on the database
+			// TODO: Consider iterating column wise instead of row wise
 			Set<Map<String, String>> sparql_result = new HashSet<Map<String, String>>();
 			Set<Map<String, String>> cypher_result = new HashSet<Map<String, String>>();
 			try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
@@ -88,13 +89,13 @@ public class SparqlToCypherTest{
 	            	Map<String, String> res = new HashMap<String, String>();
 	            	for(String col: row.keySet()) {
 	            		res.put(col, row.get(col).toString());
-	            		
 	            	}
 	            	cypher_result.add(res);
 	            }
 	        }
 			
 			// Execute the sparql query on the database
+			// TODO: Consider iterating column wise instead of row wise
 			Query query = QueryFactory.create(sparql_query);
 			QueryExecution qe = QueryExecutionFactory.create(query, rdf_model);
 			ResultSet results = qe.execSelect();
@@ -114,6 +115,10 @@ public class SparqlToCypherTest{
 			}else {
 				System.out.println("\nTEST FAILED\n");
 			}
+			
+			// TODO: Account for ORDER BY queries
+			// TODO: Account for BLANK nodes
+			// TODO: Match all column names in both the result sets
 			// assertEquals(String.format("Equality test failed for %s/queries/%s", folder, query_file.getName()), sparql_result, cypher_result);
 		}
 	}

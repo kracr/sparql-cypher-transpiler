@@ -26,7 +26,7 @@ public class RDFtoCypher {
 		      cypher_q = cypher_q.concat("\n");
 		      cypher_q = cypher_q.concat(
 		    		  String.format("MERGE (s)-[:Edge {uri:\"%s\"}]->(o);", stmt.getPredicate().getURI())
-		      );	 
+		      );
 		      cypher_qs.add(cypher_q);
 		 }
 		 return cypher_qs;

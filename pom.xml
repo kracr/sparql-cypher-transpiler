@@ -10,6 +10,7 @@
 
   <name>s2c</name>
   <!-- FIXME change it to the project's website -->
+  <!-- FIXME Change package name to lowercase -->
   <url>http://www.example.com</url>
 
   <properties>
