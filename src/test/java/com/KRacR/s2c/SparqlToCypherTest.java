@@ -134,7 +134,6 @@ public class SparqlToCypherTest{
 			}
 			
 			// TODO: Account for ORDER BY queries
-			// TODO: Account for BLANK nodes
 			// TODO: Match all column names in both the result sets
 			assertEquals(sparql_result, cypher_result, String.format("Equality test failed for %s/queries/%s", folder, query_file.getName()));
 		}
