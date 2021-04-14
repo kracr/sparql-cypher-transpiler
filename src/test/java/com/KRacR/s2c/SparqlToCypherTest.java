@@ -1,9 +1,10 @@
 package com.KRacR.s2c;
 //package test.java.com.KRacR.s2c;
 
-//import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+//import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -22,7 +23,11 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.harness.Neo4j;
@@ -31,9 +36,22 @@ import org.neo4j.harness.Neo4jBuilders;
 /**
  * Unit test for Sparql to Cypher
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SparqlToCypherTest{
 	private Neo4j embeddedDatabaseServer;
-	private void run_TTL_Automated_Test(String folder){
+	
+	@ParameterizedTest
+	@ValueSource(
+			strings = {
+				"./src/test/resources/ttl_automated_tests/w3c_test4", 
+				"./src/test/resources/ttl_automated_tests/w3c_test2",
+				"./src/test/resources/ttl_automated_tests/test1",
+				"./src/test/resources/ttl_automated_tests/w3c_test3",
+				"./src/test/resources/ttl_automated_tests/w3c_test1",
+				"./src/test/resources/ttl_automated_tests/w3c_test5"
+			}
+	)
+	public void test_run_TTL_Automated_Test(String folder){
 		Path rdf_path = Paths.get(folder, "rdf.ttl");
 		
 		// Convert the RDF to PG, it is saved under $folder/Output.json
@@ -93,8 +111,12 @@ public class SparqlToCypherTest{
 	            	cypher_result.add(res);
 	            }
 	        }catch(Exception e) {
-	        	System.out.println("Running the returned Cypher query FAILED with exception:");
-	        	System.out.println(e.getMessage());
+	        	fail(
+	        			"Running the returned Cypher query FAILED with exception:\n" 
+	        			+ e.getMessage()
+	        			+ "\nSparql query:\n" + sparql_query
+	        			+ "\n\nConverter Cypher:\n" + cypher_query
+	        	);
 	        }
 			
 			// Execute the sparql query on the database
@@ -110,23 +132,11 @@ public class SparqlToCypherTest{
 				}
 				sparql_result.add(res);
 			}
-			// System.out.println(sparql_result);
-			// System.out.println(cypher_result);
-			
-			if(sparql_result.equals(cypher_result)){
-				System.out.println("\nTEST PASSED\n");
-			}else {
-				System.out.println("\nTEST FAILED\n");
-				System.out.println("-------Sparql-------");
-				System.out.println(sparql_result);
-				System.out.println("-------Cypher-------");
-				System.out.println(cypher_result);
-			}
 			
 			// TODO: Account for ORDER BY queries
 			// TODO: Account for BLANK nodes
 			// TODO: Match all column names in both the result sets
-			// assertEquals(String.format("Equality test failed for %s/queries/%s", folder, query_file.getName()), sparql_result, cypher_result);
+			assertEquals(sparql_result, cypher_result, String.format("Equality test failed for %s/queries/%s", folder, query_file.getName()));
 		}
 	}
 
@@ -147,34 +157,16 @@ public class SparqlToCypherTest{
 		}
 	}
 
-	@Test
-    public void All_TTL_Automated_Test() throws IOException{
-    	// Code for iterating over all directories:
-    	// Source: http://www.avajava.com/tutorials/lessons/how-do-i-use-a-filefilter-to-display-only-the-directories-within-a-directory.html
-    	File f = new File("src/test/resources/ttl_automated_tests"); // current directory
-
-		FileFilter directoryFilter = new FileFilter() {
-			public boolean accept(File file) {
-				return file.isDirectory();
-			}
-		};
-
-		File[] files = f.listFiles(directoryFilter);
-		setupNeo4jServer();
-		for (File folder : files) {
-			delete_all_from_neo4j();
-			run_TTL_Automated_Test(folder.getCanonicalPath());
-		}
-    }
-
-	private void delete_all_from_neo4j() {
+    @BeforeEach
+	public void delete_all_from_neo4j() {
 		try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
             tx.execute("MATCH (n) detach delete n;");
             tx.commit();
         }
 	}
 
-	private void setupNeo4jServer() {
+	@BeforeAll
+	public void setupNeo4jServer() {
 		embeddedDatabaseServer = Neo4jBuilders.newInProcessBuilder().withDisabledServer().build();
 	}
 }
