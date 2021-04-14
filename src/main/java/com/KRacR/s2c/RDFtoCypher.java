@@ -17,7 +17,7 @@ public class RDFtoCypher {
 		 while (it.hasNext()) {
 		      Statement stmt = it.next();
 		      String cypher_q = "";
-		      CreateCypher visitor = new CreateCypher();
+		      CreateCypher visitor = new CreateCypher("MERGE");
 		      visitor.set_label("s");
 		      cypher_q = cypher_q.concat((String) stmt.getSubject().visitWith(visitor));
 		      cypher_q = cypher_q.concat("\n");
@@ -25,7 +25,7 @@ public class RDFtoCypher {
 		      cypher_q = cypher_q.concat((String) stmt.getObject().visitWith(visitor));
 		      cypher_q = cypher_q.concat("\n");
 		      cypher_q = cypher_q.concat(
-		    		  String.format("MERGE (s)-[:Edge {uri:\"%s\"}]->(o);", stmt.getPredicate().getURI())
+		    		  String.format("MERGE (s)-[:Edge {uri:\"%s\", stringrep:\"%s\"}]->(o);", stmt.getPredicate().getURI(), stmt.getPredicate().getURI())
 		      );
 		      cypher_qs.add(cypher_q);
 		 }

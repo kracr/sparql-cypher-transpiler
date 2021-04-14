@@ -1,6 +1,20 @@
 package com.KRacR.s2c;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.jena.graph.BlankNodeId;
+import org.apache.jena.graph.Node;
+import org.apache.jena.graph.NodeVisitor;
+import org.apache.jena.graph.Node_ANY;
+import org.apache.jena.graph.Node_Blank;
+import org.apache.jena.graph.Node_Literal;
+import org.apache.jena.graph.Node_URI;
+import org.apache.jena.graph.Node_Variable;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.graph.impl.LiteralLabel;
 import org.apache.jena.sparql.algebra.OpVisitor;
+import org.apache.jena.sparql.algebra.Transform;
 import org.apache.jena.sparql.algebra.op.OpAssign;
 import org.apache.jena.sparql.algebra.op.OpBGP;
 import org.apache.jena.sparql.algebra.op.OpConditional;
@@ -35,18 +49,114 @@ import org.apache.jena.sparql.algebra.op.OpTable;
 import org.apache.jena.sparql.algebra.op.OpTopN;
 import org.apache.jena.sparql.algebra.op.OpTriple;
 import org.apache.jena.sparql.algebra.op.OpUnion;
+import org.apache.jena.sparql.core.Var;
+import org.apache.lucene.util.packed.PackedLongValues.Iterator;
 
 public class SparqlAlgebraToCypherVisitor implements OpVisitor {
-	String cypher;
+	private String cypher;
+	private Map<Var, String> Sparql_to_cypher_variable_map;
+	private Map<String, Object> Cypher_to_sparql_variable_map;
+	private int blank_node_num = 0;
+	private Map<Node_Blank, Var> Sparql_blank_node_to_var_map;
+	
+	public SparqlAlgebraToCypherVisitor() {
+		cypher = new String();
+		Sparql_blank_node_to_var_map = new HashMap<Node_Blank, Var>();
+		Sparql_to_cypher_variable_map = new HashMap<Var, String>();
+		Cypher_to_sparql_variable_map = new HashMap<String, Object>();
+	}
 	
 	@Override
 	public void visit(OpBGP opBGP) {
 		// TODO Auto-generated method stub
 		System.out.println("In opBGP\n" + opBGP.toString());
+		java.util.Iterator<Triple> it = opBGP.getPattern().iterator();
+		while(it.hasNext()) {
+			Triple t = it.next();
+			CreateCypher visitor = new CreateCypher();
+			NodeVisitor cypherNodeMatcher = new NodeVisitor() {
+
+				@Override
+				public String visitAny(Node_ANY it) {
+					// TODO Auto-generated method stub
+					return null;
+				}
+
+				@Override
+				public String visitBlank(Node_Blank it, BlankNodeId id) {
+					// TODO Auto-generated method stub
+					return create_or_get_variable(it);
+				}
+
+				@Override
+				public String visitLiteral(Node_Literal it, LiteralLabel lit) {
+					// TODO Auto-generated method stub
+					return 
+							(lit.language().equals(""))?
+							(
+								String.format(
+									"{uri:\"\", typeiri:\"%s\", lexform:\"%s\"}",
+									lit.getDatatypeURI(), 
+									lit.getLexicalForm()
+								)
+							):(
+								String.format(
+									"{uri:\"\", typeiri:\"%s\", lexform:\"%s\", langtag:\"%s\"}",
+									lit.getDatatypeURI(), 
+									lit.getLexicalForm(),
+									lit.language()
+								)
+							);
+				}
+
+				@Override
+				public String visitURI(Node_URI it, String uri) {
+					// TODO Auto-generated method stub
+					return String.format("{uri:\"%s\"}", uri);
+				}
+
+				@Override
+				public String visitVariable(Node_Variable it, String name) {
+					// TODO Auto-generated method stub
+					return create_or_get_variable(Var.alloc(it));
+				}
+				
+			};
+			
+			cypher = cypher + "MATCH (" 
+					+ t.getMatchSubject().visitWith(cypherNodeMatcher) 
+					+ ")-[" 
+					+ t.getMatchPredicate().visitWith(cypherNodeMatcher) 
+					+ "]->("
+					+ t.getMatchObject().visitWith(cypherNodeMatcher)
+					+ ")\n";
+		}
+	}
+
+	protected String create_or_get_variable(Node_Blank it) {
+		// TODO Auto-generated method stub
+		String var_name = "blankvar" + (blank_node_num++);
+		Var var = Var.alloc(var_name + it.getBlankNodeId().toString());
+		Sparql_blank_node_to_var_map.put(it, var);
+		String created_var = create_or_get_variable(var);
+		return created_var;
+	}
+
+	protected String create_or_get_variable(Var allocated_var) {
+		// TODO Auto-generated method stub
+		// TODO Account for variable names to ensure that there is no collision, and the created variable is valid in Cypher conventions
+		// https://neo4j.com/docs/cypher-manual/current/syntax/naming/
+		// https://www.w3.org/TR/sparql11-query/#rVARNAME
+		if(Sparql_to_cypher_variable_map.containsKey(allocated_var)) return Sparql_to_cypher_variable_map.get(allocated_var);
+		else {
+			Sparql_to_cypher_variable_map.put(allocated_var, allocated_var.getName());
+			Cypher_to_sparql_variable_map.put(allocated_var.getName(), allocated_var);
+			return Sparql_to_cypher_variable_map.get(allocated_var);
+		}
 	}
 
 	@Override
-	public void visit(OpQuadPattern quadPattern) {
+	public void visit(OpQuadPattern quadPattern){
 		// TODO Auto-generated method stub
 		System.out.println("In quadPattern\n" + quadPattern.toString());
 	}
@@ -211,6 +321,13 @@ public class SparqlAlgebraToCypherVisitor implements OpVisitor {
 	public void visit(OpProject opProject) {
 		// TODO Auto-generated method stub
 		System.out.println("In opProject\n" + opProject.toString());
+		opProject.getSubOp().visit(this);
+		cypher = cypher.concat("RETURN ");
+		for(Var var: opProject.getVars()) {
+			cypher = cypher.concat(Sparql_to_cypher_variable_map.get(var) + ".stringrep AS " + Sparql_to_cypher_variable_map.get(var) + ", ");
+		}
+		cypher = cypher.substring(0, cypher.length() - 2);
+		cypher = cypher.concat("\n");
 	}
 
 	@Override
@@ -245,7 +362,7 @@ public class SparqlAlgebraToCypherVisitor implements OpVisitor {
 
 	public String getCypher() {
 		// TODO Auto-generated method stub
-		return "match (n)-[e:Edge]->(r {uri:\"http://localhost/persons/Paul_Erdoes\"}) return n.uri as subject, e.uri as predicate";
+		return cypher; //"match (n)-[e:Edge]->(r {uri:\"http://localhost/persons/Paul_Erdoes\"}) return n.uri as subject, e.uri as predicate";
 	}
 
 }

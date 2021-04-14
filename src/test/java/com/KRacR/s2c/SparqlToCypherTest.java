@@ -92,6 +92,9 @@ public class SparqlToCypherTest{
 	            	}
 	            	cypher_result.add(res);
 	            }
+	        }catch(Exception e) {
+	        	System.out.println("Running the returned Cypher query FAILED with exception:");
+	        	System.out.println(e.getMessage());
 	        }
 			
 			// Execute the sparql query on the database
@@ -114,6 +117,10 @@ public class SparqlToCypherTest{
 				System.out.println("\nTEST PASSED\n");
 			}else {
 				System.out.println("\nTEST FAILED\n");
+				System.out.println("-------Sparql-------");
+				System.out.println(sparql_result);
+				System.out.println("-------Cypher-------");
+				System.out.println(cypher_result);
 			}
 			
 			// TODO: Account for ORDER BY queries

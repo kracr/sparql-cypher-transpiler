@@ -9,16 +9,25 @@ import org.apache.jena.rdf.model.Resource;
 // TODO: Check if there exists a unique id for every node in Neo4j
 
 class CreateCypher implements RDFVisitor {
+	String operation;
 	String label;
 	public CreateCypher() {
 		this.label = "";
+		this.operation = "";
+	}
+	
+	public CreateCypher(String operation) {
+		this.label = "";
+		this.operation = operation + " ";
 	}
 
 	@Override
 	public String visitBlank(Resource r, AnonId id) {
 		return String.format(
-				"MERGE (%s {uri:\"\", id:\"%s\"})",
+				"%s(%s {uri:\"\", id:\"%s\", stringrep:\"%s\"})",
+				this.operation,
 				this.label,
+				id.getBlankNodeId().toString(),
 				id.getBlankNodeId().toString()
 		);
 	}
@@ -26,8 +35,10 @@ class CreateCypher implements RDFVisitor {
 	@Override
 	public String visitURI(Resource r, String uri) {
 		return String.format(
-				"MERGE (%s {uri:\"%s\"})",
+				"%s(%s {uri:\"%s\", stringrep:\"%s\"})",
+				this.operation,
 				this.label,
+				uri,
 				uri
 		);
 	}
@@ -38,17 +49,21 @@ class CreateCypher implements RDFVisitor {
 				(l.getDatatype() instanceof org.apache.jena.datatypes.xsd.impl.RDFLangString)?
 				(
 					String.format(
-						"MERGE (%s {uri:\"\", typeiri:\"%s\", lexform:\"%s\", langtag:\"%s\"})", 
+						"%s(%s {uri:\"\", typeiri:\"%s\", lexform:\"%s\", langtag:\"%s\", stringrep:\"%s\"})",
+						this.operation,
 						this.label,
 						l.getDatatypeURI(), 
 						l.getLexicalForm(),
-						l.getLanguage()
+						l.getLanguage(),
+						l.getLexicalForm() + "@" + l.getLanguage()
 					)
 				):(
 					String.format(
-						"MERGE (%s {uri:\"\", typeiri:\"%s\", lexform:\"%s\"})", 
+						"%s(%s {uri:\"\", typeiri:\"%s\", lexform:\"%s\", stringrep:\"%s\"})",
+						this.operation,
 						this.label,
 						l.getDatatypeURI(), 
+						l.getLexicalForm(),
 						l.getLexicalForm()
 					)
 				);
