@@ -52,6 +52,7 @@ import org.apache.jena.sparql.algebra.op.OpUnion;
 import org.apache.jena.sparql.core.Var;
 import org.apache.lucene.util.packed.PackedLongValues.Iterator;
 
+// TODO Some way to signify to the user if we ourselves know that the query has not been converted
 public class SparqlAlgebraToCypherVisitor implements OpVisitor {
 	private String cypher;
 	private Map<Var, String> Sparql_to_cypher_variable_map;

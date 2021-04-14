@@ -13,8 +13,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
+
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -27,6 +31,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.graphdb.Result;
 import org.neo4j.graphdb.Transaction;
@@ -40,29 +46,56 @@ import org.neo4j.harness.Neo4jBuilders;
 public class SparqlToCypherTest{
 	private Neo4j embeddedDatabaseServer;
 	
-	@ParameterizedTest
-	@ValueSource(
-			strings = {
-				"./src/test/resources/ttl_automated_tests/w3c_test4", 
-				"./src/test/resources/ttl_automated_tests/w3c_test2",
-				"./src/test/resources/ttl_automated_tests/test1",
-				"./src/test/resources/ttl_automated_tests/w3c_test3",
-				"./src/test/resources/ttl_automated_tests/w3c_test1",
-				"./src/test/resources/ttl_automated_tests/w3c_test5"
+	private static List<Arguments> SparqlToCypherQueriesProvider() throws IOException {
+		File f = new File("src/test/resources/ttl_automated_tests"); // current directory
+
+		FileFilter directoryFilter = new FileFilter() {
+			public boolean accept(File file) {
+				return file.isDirectory();
 			}
-	)
-	public void test_run_TTL_Automated_Test(String folder){
-		Path rdf_path = Paths.get(folder, "rdf.ttl");
-		
-		// Convert the RDF to PG, it is saved under $folder/Output.json
-		// Use PG_Bench RDF_to_PG_PG_Bench(rdf_path, folder);
-		
-		// Create RDF model from ttl
-		Model rdf_model = RDFDataMgr.loadModel(rdf_path.toString());
-		
-		// Convert the RDF model to cypher queries and load into Neo4j
+		};
+
+		File[] files = f.listFiles(directoryFilter);
+		List<Arguments> test_args = new LinkedList<Arguments>();
+		for (File folder_ : files) {
+			String folder = folder_.getCanonicalPath();
+			
+			Path rdf_path = Paths.get(folder, "rdf.ttl");
+			
+			// Convert the RDF to PG, it is saved under $folder/Output.json
+			// Use PG_Bench RDF_to_PG_PG_Bench(rdf_path, folder);
+			
+			// Create RDF model from ttl
+			Model rdf_model = RDFDataMgr.loadModel(rdf_path.toString());
+			List<String> RDF_converted_to_cypher = RDFtoCypher.RDFtoCypherDirect(rdf_model);
+			
+			// Iterate over all sparql files in queries folder
+			FileFilter sparqlFilter = new FileFilter() {
+				public boolean accept(File file) {
+					String extension = "";
+
+					int i = file.getName().lastIndexOf('.');
+					if (i > 0) {
+					    extension = file.getName().substring(i+1);
+					}
+					
+					return file.isFile() && (extension.equals("sparql"));
+				}
+			};
+			File[] query_files = Paths.get(folder, "queries").toFile().listFiles(sparqlFilter);
+			for(File query_file: query_files) {
+				test_args.add(Arguments.of(rdf_model, RDF_converted_to_cypher, query_file));
+			}
+		}
+		return test_args;
+	}
+	
+	@ParameterizedTest
+	@MethodSource("SparqlToCypherQueriesProvider")
+	public void test_run_TTL_Automated_Test(Model rdf_model, List<String> RDF_converted_to_cypher, File query_file) throws IOException{
+		// Load the RDF Converted Cypher to Neo4j
 		try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
-            for(String q: RDFtoCypher.RDFtoCypherDirect(rdf_model)) {
+            for(String q: RDF_converted_to_cypher) {
             	tx.execute(q);
             }
             tx.commit();
@@ -71,72 +104,56 @@ public class SparqlToCypherTest{
         	fail("Error executing RDF converted cypher queries in neo4j");
         }
 		
-		// Iterate over all sparql files in queries folder
-		FileFilter sparqlFilter = new FileFilter() {
-			public boolean accept(File file) {
-				String extension = "";
-
-				int i = file.getName().lastIndexOf('.');
-				if (i > 0) {
-				    extension = file.getName().substring(i+1);
-				}
-				
-				return file.isFile() && (extension.equals("sparql"));
-			}
-		};
-		File[] query_files = Paths.get(folder, "queries").toFile().listFiles(sparqlFilter);
-		for (File query_file : query_files) {
-			String sparql_query = null;
-			try {
-				sparql_query = new String(Files.readAllBytes(query_file.toPath()));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
-			// Run the Sparql to Cypher converter
-			String cypher_query = SparqlToCypher.convert(sparql_query);
-			
-			// Execute the cypher query on the database
-			// TODO: Consider iterating column wise instead of row wise
-			Set<Map<String, String>> sparql_result = new HashSet<Map<String, String>>();
-			Set<Map<String, String>> cypher_result = new HashSet<Map<String, String>>();
-			try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
-				Result result = tx.execute(cypher_query);
-	            while(result.hasNext()) {
-	            	Map<String, Object> row = result.next();
-	            	Map<String, String> res = new HashMap<String, String>();
-	            	for(String col: row.keySet()) {
-	            		res.put(col, row.get(col).toString());
-	            	}
-	            	cypher_result.add(res);
-	            }
-	        }catch(Exception e) {
-	        	fail(
-	        			"Running the returned Cypher query FAILED with exception:\n" 
-	        			+ e.getMessage()
-	        			+ "\nSparql query:\n" + sparql_query
-	        			+ "\n\nConverter Cypher:\n" + cypher_query
-	        	);
-	        }
-			
-			// Execute the sparql query on the database
-			// TODO: Consider iterating column wise instead of row wise
-			Query query = QueryFactory.create(sparql_query);
-			QueryExecution qe = QueryExecutionFactory.create(query, rdf_model);
-			ResultSet results = qe.execSelect();
-			while(results.hasNext()) {
-				QuerySolution row = results.next();
-				Map<String, String> res = new HashMap<String, String>();
-				for(String col: results.getResultVars()) {
-					res.put(col, row.get(col).toString());
-				}
-				sparql_result.add(res);
-			}
-			
-			// TODO: Account for ORDER BY queries
-			// TODO: Match all column names in both the result sets
-			assertEquals(sparql_result, cypher_result, String.format("Equality test failed for %s/queries/%s", folder, query_file.getName()));
+		String sparql_query = null;
+		try {
+			sparql_query = new String(Files.readAllBytes(query_file.toPath()));
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		
+		// Run the Sparql to Cypher converter
+		String cypher_query = SparqlToCypher.convert(sparql_query);
+		
+		// Execute the cypher query on the database
+		// TODO: Consider iterating column wise instead of row wise
+		Set<Map<String, String>> sparql_result = new HashSet<Map<String, String>>();
+		Set<Map<String, String>> cypher_result = new HashSet<Map<String, String>>();
+		try(Transaction tx = embeddedDatabaseServer.databaseManagementService().database("neo4j").beginTx()) {
+			Result result = tx.execute(cypher_query);
+            while(result.hasNext()) {
+            	Map<String, Object> row = result.next();
+            	Map<String, String> res = new HashMap<String, String>();
+            	for(String col: row.keySet()) {
+            		res.put(col, row.get(col).toString());
+            	}
+            	cypher_result.add(res);
+            }
+        }catch(Exception e) {
+        	fail(
+        			"Running the returned Cypher query FAILED with exception:\n" 
+        			+ e.getMessage()
+        			+ "\nSparql query:\n" + sparql_query
+        			+ "\n\nConverter Cypher:\n" + cypher_query
+        	);
+        }
+		
+		// Execute the sparql query on the database
+		// TODO: Consider iterating column wise instead of row wise
+		Query query = QueryFactory.create(sparql_query);
+		QueryExecution qe = QueryExecutionFactory.create(query, rdf_model);
+		ResultSet results = qe.execSelect();
+		while(results.hasNext()) {
+			QuerySolution row = results.next();
+			Map<String, String> res = new HashMap<String, String>();
+			for(String col: results.getResultVars()) {
+				res.put(col, row.get(col).toString());
+			}
+			sparql_result.add(res);
+		}
+		
+		// TODO: Account for ORDER BY queries
+		// TODO: Match all column names in both the result sets
+		assertEquals(sparql_result, cypher_result, String.format("Equality test failed for %s", query_file.getCanonicalPath()));
 	}
 
     private void RDF_to_PG_PG_Bench(Path rdf_path, String folder) {
