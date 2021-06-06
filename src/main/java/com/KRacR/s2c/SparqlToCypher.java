@@ -2,6 +2,8 @@ package com.KRacR.s2c;
 
 import java.lang.String;
 
+import javax.ws.rs.NotSupportedException;
+
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QueryVisitor;
@@ -45,15 +47,22 @@ import org.apache.jena.sparql.algebra.op.OpUnion;
 import org.apache.jena.sparql.core.Prologue;
 
 public class SparqlToCypher {
-	public static String convert(String sparql_query) {
+	public static String convert(String sparql_query) throws QueryNotSupportedException {
 		System.out.println("------------------------------------------\nInside Sparql to Cypher Converter");
 		Query sq = QueryFactory.create(sparql_query);
+		if(!(sq.isSelectType())) throw new QueryNotSupportedException("Conversion of the following query failed:\n" + sparql_query + "\nDue to the following reason:\n" + "Describe, Construct and Ask type queries not supported");
 		Op op = Algebra.compile(sq);
 		System.out.println(sparql_query);
-		System.out.println(op);
+		//System.out.println(op);
 		SparqlAlgebraToCypherVisitor visitor = new SparqlAlgebraToCypherVisitor();
 		op.visit(visitor);
-		System.out.println(visitor.getCypher());
+		String cypher_query = null;
+		try {
+			cypher_query = visitor.getCypher();
+		}catch(QueryNotSupportedException qe) {
+			throw new QueryNotSupportedException("Conversion of the following query failed:\n" + sparql_query + "\nDue to the following reason:\n" + qe.getMessage());
+		}
+		System.out.println(cypher_query);
 		System.out.println("Exit Sparql to Cypher Converter\n------------------------------------------");
 		return visitor.getCypher();
 	}

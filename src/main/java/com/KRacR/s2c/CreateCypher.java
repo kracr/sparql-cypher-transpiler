@@ -64,7 +64,10 @@ class CreateCypher implements RDFVisitor {
 						this.label,
 						l.getDatatypeURI(), 
 						l.getLexicalForm(),
-						l.getLexicalForm()
+						(l.getLexicalForm() + 
+								(l.getDatatypeURI().equals("http://www.w3.org/2001/XMLSchema#string")?
+										"":
+										"^^"+l.getDatatypeURI()))
 					)
 				);
 	}

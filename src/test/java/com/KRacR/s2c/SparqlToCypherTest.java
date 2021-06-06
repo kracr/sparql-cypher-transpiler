@@ -27,6 +27,7 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
@@ -39,12 +40,45 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
 
+// https://stackoverflow.com/questions/8255738/is-there-a-stopwatch-in-java
+class Stopwatch{
+	  private long startTime;
+	  private long stopTime;
+
+	  /**
+	   starting the stop watch.
+	  */
+	  public void resetstart(){
+		  this.startTime = 0;
+		  this.stopTime = 0;
+	      startTime = System.nanoTime();
+	  }
+
+	  /**
+	   stopping the stop watch.
+	  */
+	  public void stop()
+	  {     stopTime = System.nanoTime(); }
+
+	  /**
+	  elapsed time in nanoseconds.
+	  */
+	  public long time(){
+	        return (stopTime - startTime);
+	  }
+
+	  public String toString(){
+	      return "elapsed time: " + time() + " nanoseconds.";
+	  }
+}
+
 /**
  * Unit test for Sparql to Cypher
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SparqlToCypherTest{
 	private Neo4j embeddedDatabaseServer;
+	private Stopwatch sw = new Stopwatch();
 	
 	private static List<Arguments> SparqlToCypherQueriesProvider() throws IOException {
 		File f = new File("src/test/resources/ttl_automated_tests"); // current directory
@@ -102,6 +136,7 @@ public class SparqlToCypherTest{
         }catch(Exception e) {
         	e.printStackTrace();
         	fail("Error executing RDF converted cypher queries in neo4j");
+        	return;
         }
 		
 		String sparql_query = null;
@@ -112,8 +147,17 @@ public class SparqlToCypherTest{
 		}
 		
 		// Run the Sparql to Cypher converter
-		String cypher_query = SparqlToCypher.convert(sparql_query);
-		
+		sw.resetstart();
+		String cypher_query;
+		try {
+			cypher_query = SparqlToCypher.convert(sparql_query);
+		} catch (QueryNotSupportedException e1) {
+			Assumptions.assumeTrue(false, e1.getMessage());
+			System.out.println(e1.getMessage());
+			return;
+		}
+		sw.stop();
+		System.out.println("Query Conversion time: " + ((double)sw.time())/1000 + " ms.");
 		// Execute the cypher query on the database
 		// TODO: Consider iterating column wise instead of row wise
 		Set<Map<String, String>> sparql_result = new HashSet<Map<String, String>>();
@@ -133,7 +177,7 @@ public class SparqlToCypherTest{
         			"Running the returned Cypher query FAILED with exception:\n" 
         			+ e.getMessage()
         			+ "\nSparql query:\n" + sparql_query
-        			+ "\n\nConverter Cypher:\n" + cypher_query
+        			+ "\n\nConverted Cypher:\n" + cypher_query
         	);
         }
 		
@@ -151,9 +195,17 @@ public class SparqlToCypherTest{
 			sparql_result.add(res);
 		}
 		
+		System.out.println(String.format("Sparql Result\n%s\n", sparql_result.toString()));
+		System.out.println(String.format("Cypher Result\n%s\n", cypher_result.toString()));
+		
 		// TODO: Account for ORDER BY queries
 		// TODO: Match all column names in both the result sets
-		assertEquals(sparql_result, cypher_result, String.format("Equality test failed for %s", query_file.getCanonicalPath()));
+		assertEquals(sparql_result, cypher_result, String.format(
+				"Equality test failed for %s\nSparql result:\n%s\n\nCypher Result\n%s", 
+				query_file.getCanonicalPath(),
+				sparql_result.toString(),
+				cypher_result.toString()
+		));
 	}
 
     private void RDF_to_PG_PG_Bench(Path rdf_path, String folder) {

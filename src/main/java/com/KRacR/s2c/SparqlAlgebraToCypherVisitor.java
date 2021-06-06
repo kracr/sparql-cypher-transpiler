@@ -59,6 +59,8 @@ public class SparqlAlgebraToCypherVisitor implements OpVisitor {
 	private Map<String, Object> Cypher_to_sparql_variable_map;
 	private int blank_node_num = 0;
 	private Map<Node_Blank, Var> Sparql_blank_node_to_var_map;
+	private boolean isQueryConversionSuccesful = true;
+	private String conversionErrors = "";
 	
 	public SparqlAlgebraToCypherVisitor() {
 		cypher = new String();
@@ -70,6 +72,7 @@ public class SparqlAlgebraToCypherVisitor implements OpVisitor {
 	@Override
 	public void visit(OpBGP opBGP) {
 		// TODO Auto-generated method stub
+		// TODO Instead of handling opTriple in this function, handle it in its visitor
 		System.out.println("In opBGP\n" + opBGP.toString());
 		java.util.Iterator<Triple> it = opBGP.getPattern().iterator();
 		while(it.hasNext()) {
@@ -160,162 +163,216 @@ public class SparqlAlgebraToCypherVisitor implements OpVisitor {
 	public void visit(OpQuadPattern quadPattern){
 		// TODO Auto-generated method stub
 		System.out.println("In quadPattern\n" + quadPattern.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpQuadPattern\n";
 	}
 
 	@Override
 	public void visit(OpQuadBlock quadBlock) {
 		// TODO Auto-generated method stub
 		System.out.println("In quadBlock\n" + quadBlock.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpQuadBlock\n";
 	}
 
 	@Override
 	public void visit(OpTriple opTriple) {
 		// TODO Auto-generated method stub
 		System.out.println("In opTriple\n" + opTriple.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpTriple\n";
 	}
 
 	@Override
 	public void visit(OpQuad opQuad) {
 		// TODO Auto-generated method stub
 		System.out.println("In opQuad\n" + opQuad.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpQuad\n";
 	}
 
 	@Override
 	public void visit(OpPath opPath) {
 		// TODO Auto-generated method stub
 		System.out.println("In opPath\n" + opPath.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpPath\n";
 	}
 
 	@Override
 	public void visit(OpFind opFind) {
 		// TODO Auto-generated method stub
 		System.out.println("In opFind\n" + opFind.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpFind\n";
 	}
 
 	@Override
 	public void visit(OpTable opTable) {
 		// TODO Auto-generated method stub
 		System.out.println("In opTable\n" + opTable.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpTable\n";
 	}
 
 	@Override
 	public void visit(OpNull opNull) {
 		// TODO Auto-generated method stub
 		System.out.println("In opNull\n" + opNull.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpNull\n";
 	}
 
 	@Override
 	public void visit(OpProcedure opProc) {
 		// TODO Auto-generated method stub
 		System.out.println("In opProc\n" + opProc.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpProcedure\n";
 	}
 
 	@Override
 	public void visit(OpPropFunc opPropFunc) {
 		// TODO Auto-generated method stub
 		System.out.println("In opPropFunc\n" + opPropFunc.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpPropFunc\n";
 	}
 
 	@Override
 	public void visit(OpFilter opFilter) {
 		// TODO Auto-generated method stub
 		System.out.println("In opFilter\n" + opFilter.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpFilter\n";
 	}
 
 	@Override
 	public void visit(OpGraph opGraph) {
 		// TODO Auto-generated method stub
 		System.out.println("In opGraph\n" + opGraph.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpGraph\n";
 	}
 
 	@Override
 	public void visit(OpService opService) {
 		// TODO Auto-generated method stub
 		System.out.println("In opService\n" + opService.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpService\n";
 	}
 
 	@Override
 	public void visit(OpDatasetNames dsNames) {
 		// TODO Auto-generated method stub
 		System.out.println("In dsNames\n" + dsNames.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpDatasetNames\n";
 	}
 
 	@Override
 	public void visit(OpLabel opLabel) {
 		// TODO Auto-generated method stub
 		System.out.println("In opLabel\n" + opLabel.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpLabel\n";
 	}
 
 	@Override
 	public void visit(OpAssign opAssign) {
 		// TODO Auto-generated method stub
 		System.out.println("In opAssign\n" + opAssign.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpAssign\n";
 	}
 
 	@Override
 	public void visit(OpExtend opExtend) {
 		// TODO Auto-generated method stub
 		System.out.println("In opExtend\n" + opExtend.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpExtend\n";
 	}
 
 	@Override
 	public void visit(OpJoin opJoin) {
 		// TODO Auto-generated method stub
 		System.out.println("In opJoin\n" + opJoin.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpJoin\n";
 	}
 
 	@Override
 	public void visit(OpLeftJoin opLeftJoin) {
 		// TODO Auto-generated method stub
 		System.out.println("In opLeftJoin\n" + opLeftJoin.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpLeftJoin\n";
 	}
 
 	@Override
 	public void visit(OpUnion opUnion) {
 		// TODO Auto-generated method stub
 		System.out.println("In opUnion\n" + opUnion.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpUnion\n";
 	}
 
 	@Override
 	public void visit(OpDiff opDiff) {
 		// TODO Auto-generated method stub
 		System.out.println("In opDiff\n" + opDiff.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpDiff\n";
 	}
 
 	@Override
 	public void visit(OpMinus opMinus) {
 		// TODO Auto-generated method stub
 		System.out.println("In opMinus\n" + opMinus.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpMinus\n";
 	}
 
 	@Override
 	public void visit(OpConditional opCondition) {
 		// TODO Auto-generated method stub
 		System.out.println("In opCondition\n" + opCondition.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpCondition\n";
 	}
 
 	@Override
 	public void visit(OpSequence opSequence) {
 		// TODO Auto-generated method stub
 		System.out.println("In opSequence\n" + opSequence.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpSequence\n";
 	}
 
 	@Override
 	public void visit(OpDisjunction opDisjunction) {
 		// TODO Auto-generated method stub
 		System.out.println("In opDisjunction\n" + opDisjunction.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpDisjunction\n";
 	}
 
 	@Override
 	public void visit(OpList opList) {
 		// TODO Auto-generated method stub
 		System.out.println("In opList\n" + opList.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpList\n";
 	}
 
 	@Override
 	public void visit(OpOrder opOrder) {
 		// TODO Auto-generated method stub
 		System.out.println("In opOrder\n" + opOrder.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpOrder\n";
 	}
 
 	@Override
@@ -335,35 +392,44 @@ public class SparqlAlgebraToCypherVisitor implements OpVisitor {
 	public void visit(OpReduced opReduced) {
 		// TODO Auto-generated method stub
 		System.out.println("In opReduced\n" + opReduced.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpReduced\n";
 	}
 
 	@Override
 	public void visit(OpDistinct opDistinct) {
 		// TODO Auto-generated method stub
 		System.out.println("In opDistinct\n" + opDistinct.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpDistinct\n";
 	}
 
 	@Override
 	public void visit(OpSlice opSlice) {
 		// TODO Auto-generated method stub
 		System.out.println("In opSlice\n" + opSlice.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpSlice\n";
 	}
 
 	@Override
 	public void visit(OpGroup opGroup) {
 		// TODO Auto-generated method stub
 		System.out.println("In opGroup\n" + opGroup.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpGroup\n";
 	}
 
 	@Override
 	public void visit(OpTopN opTop) {
 		// TODO Auto-generated method stub
 		System.out.println("In opTop\n" + opTop.toString());
+		this.isQueryConversionSuccesful = false;
+		this.conversionErrors += "Unsupported Algebra type OpTop\n";
 	}
 
-	public String getCypher() {
-		// TODO Auto-generated method stub
-		return cypher; //"match (n)-[e:Edge]->(r {uri:\"http://localhost/persons/Paul_Erdoes\"}) return n.uri as subject, e.uri as predicate";
+	public String getCypher() throws QueryNotSupportedException {
+		if(this.isQueryConversionSuccesful) return cypher;
+		else throw new QueryNotSupportedException(this.conversionErrors);
 	}
-
 }
