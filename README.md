@@ -1,7 +1,7 @@
 # Sparql-to-cypher
 This repository contains material related to the SPARQL to Cypher Transpiler.
 
-## Running
+## Usage
 To obtain the repository, execute:
 ```
 git clone https://github.com/kracr/sparql-cypher-transpiler
