@@ -9,7 +9,7 @@ git clone https://github.com/kracr/sparql-cypher-transpiler
 
 The project is organised around the [Maven](https://maven.apache.org/) build system. To execute the testbench and view the results, execute:
 ```
-mvn package
+mvn test
 ```
 
 ## Description of Components
